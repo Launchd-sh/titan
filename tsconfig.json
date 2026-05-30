@@ -6,6 +6,12 @@
     "lib": ["ESNext"],
     "types": ["bun-types"],
     "strict": true,
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+    "paths": {
+      "$src/*": ["./src/*"],
+      "$lib/*": ["./src/lib/*"],
+      "$middleware/*": ["./src/middleware/*"],
+      "$routes/*": ["./src/routes/*"],
+    },
+  },
 }

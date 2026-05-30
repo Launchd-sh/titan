@@ -1,6 +1,6 @@
 import Elysia, { t } from "elysia";
-import { db } from "../db";
-import { generateSessionToken, hashToken } from "../lib/tokens";
+import { db } from "$src/db";
+import { generateSessionToken, hashToken } from "$lib/tokens";
 
 export const authRoutes = new Elysia({ prefix: "/auth" })
   .post(
@@ -9,9 +9,12 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       const existing = await db.user.findFirst({
         where: { OR: [{ username: body.username }, { email: body.email }] },
       });
-      if (existing) return status(409, { error: "username or email already taken" });
+      if (existing)
+        return status(409, { error: "username or email already taken" });
 
-      const passwordHash = await Bun.password.hash(body.password, { algorithm: "argon2id" });
+      const passwordHash = await Bun.password.hash(body.password, {
+        algorithm: "argon2id",
+      });
       const user = await db.user.create({
         data: { username: body.username, email: body.email, passwordHash },
         select: { id: true, username: true, email: true, createdAt: true },
@@ -28,12 +31,14 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         email: t.String({ minLength: 1 }),
         password: t.String({ minLength: 8 }),
       }),
-    }
+    },
   )
   .post(
     "/login",
     async ({ body, status }) => {
-      const user = await db.user.findUnique({ where: { username: body.username } });
+      const user = await db.user.findUnique({
+        where: { username: body.username },
+      });
       if (!user) return status(401, { error: "invalid credentials" });
 
       const valid = await Bun.password.verify(body.password, user.passwordHash);
@@ -49,7 +54,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         username: t.String({ minLength: 1 }),
         password: t.String({ minLength: 1 }),
       }),
-    }
+    },
   )
   .post("/logout", async ({ headers, set }) => {
     const authorization = headers["authorization"] ?? "";
