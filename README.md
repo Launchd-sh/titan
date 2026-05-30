@@ -1,2 +1,2 @@
 # titan
-The Launchd orchestrator, responsible for the containers lifecycle from configuration to Kubernetes.
+The Launchd API Server, the buck stops here.
