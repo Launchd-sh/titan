@@ -1,6 +1,7 @@
 import Elysia, { t } from "elysia";
 import { db } from "$src/db";
 import { authMiddleware } from "$middleware/auth";
+import { createAuditLog, parseAuditLogLimit } from "$lib/audit";
 
 const OWNER_ROLE = "owner";
 
@@ -67,6 +68,18 @@ export const orgRoutes = new Elysia({ prefix: "/orgs" })
           slug: true,
           createdAt: true,
           updatedAt: true,
+        },
+      });
+
+      await createAuditLog({
+        organizationId: org.id,
+        actorUserId: session!.user.id,
+        action: "organization.created",
+        targetType: "organization",
+        targetId: org.id,
+        metadata: {
+          name: org.name,
+          slug: org.slug,
         },
       });
 
@@ -137,6 +150,18 @@ export const orgRoutes = new Elysia({ prefix: "/orgs" })
           slug: true,
           createdAt: true,
           updatedAt: true,
+        },
+      });
+
+      await createAuditLog({
+        organizationId: org.id,
+        actorUserId: session!.user.id,
+        action: "organization.updated",
+        targetType: "organization",
+        targetId: org.id,
+        metadata: {
+          name: org.name,
+          slug: org.slug,
         },
       });
 
@@ -218,6 +243,19 @@ export const orgRoutes = new Elysia({ prefix: "/orgs" })
         },
       });
 
+      await createAuditLog({
+        organizationId: params.org_id,
+        projectId: project.id,
+        actorUserId: session!.user.id,
+        action: "project.created",
+        targetType: "project",
+        targetId: project.id,
+        metadata: {
+          name: project.name,
+          slug: project.slug,
+        },
+      });
+
       return status(201, project);
     },
     {
@@ -228,6 +266,40 @@ export const orgRoutes = new Elysia({ prefix: "/orgs" })
         name: t.String({ minLength: 1 }),
         slug: t.String({ minLength: 1 }),
         description: t.Optional(t.String()),
+      }),
+    },
+  )
+  .get(
+    "/:org_id/audit-logs",
+    async ({ params, query, session, status }) => {
+      const membership = await getMembership(session!.user.id, params.org_id);
+      if (!membership) return status(404, { error: "organization not found" });
+
+      const logs = await db.auditLog.findMany({
+        where: { organizationId: params.org_id },
+        select: {
+          id: true,
+          organizationId: true,
+          projectId: true,
+          actorUserId: true,
+          action: true,
+          targetType: true,
+          targetId: true,
+          metadata: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: parseAuditLogLimit(query.limit),
+      });
+
+      return { items: logs };
+    },
+    {
+      params: t.Object({
+        org_id: t.String({ format: "uuid" }),
+      }),
+      query: t.Object({
+        limit: t.Optional(t.String()),
       }),
     },
   );

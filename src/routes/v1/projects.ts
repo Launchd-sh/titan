@@ -1,6 +1,7 @@
 import Elysia, { t } from "elysia";
 import { db } from "$src/db";
 import { authMiddleware } from "$middleware/auth";
+import { createAuditLog, parseAuditLogLimit } from "$lib/audit";
 
 const OWNER_ROLE = "owner";
 
@@ -85,6 +86,19 @@ export const projectRoutes = new Elysia({ prefix: "/projects" })
         },
       });
 
+      await createAuditLog({
+        organizationId: project.organizationId,
+        projectId: project.id,
+        actorUserId: session!.user.id,
+        action: "project.updated",
+        targetType: "project",
+        targetId: project.id,
+        metadata: {
+          name: updated.name,
+          slug: updated.slug,
+        },
+      });
+
       return updated;
     },
     {
@@ -111,12 +125,62 @@ export const projectRoutes = new Elysia({ prefix: "/projects" })
       if (!membership) return status(404, { error: "project not found" });
       if (membership.role !== OWNER_ROLE) return status(403, { error: "forbidden" });
 
+      await createAuditLog({
+        organizationId: project.organizationId,
+        projectId: project.id,
+        actorUserId: session!.user.id,
+        action: "project.deleted",
+        targetType: "project",
+        targetId: project.id,
+        metadata: null,
+      });
+
       await db.project.delete({ where: { id: project.id } });
       set.status = 204;
     },
     {
       params: t.Object({
         project_id: t.String({ format: "uuid" }),
+      }),
+    },
+  )
+  .get(
+    "/:project_id/audit-logs",
+    async ({ params, query, session, status }) => {
+      const project = await db.project.findUnique({
+        where: { id: params.project_id },
+        select: { id: true, organizationId: true },
+      });
+      if (!project) return status(404, { error: "project not found" });
+
+      const membership = await getMembership(session!.user.id, project.organizationId);
+      if (!membership) return status(404, { error: "project not found" });
+
+      const logs = await db.auditLog.findMany({
+        where: { projectId: project.id },
+        select: {
+          id: true,
+          organizationId: true,
+          projectId: true,
+          actorUserId: true,
+          action: true,
+          targetType: true,
+          targetId: true,
+          metadata: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: parseAuditLogLimit(query.limit),
+      });
+
+      return { items: logs };
+    },
+    {
+      params: t.Object({
+        project_id: t.String({ format: "uuid" }),
+      }),
+      query: t.Object({
+        limit: t.Optional(t.String()),
       }),
     },
   );
