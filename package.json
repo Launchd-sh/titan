@@ -1,19 +1,24 @@
 {
   "name": "titan",
   "version": "0.1.0",
+  "type": "module",
   "scripts": {
-    "dev": "bun --watch src/index.ts",
-    "start": "bun run src/index.ts",
-    "db:generate": "bunx prisma generate",
-    "db:push": "bunx prisma db push",
-    "db:migrate": "bunx prisma migrate dev"
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",
+    "argon2": "^0.44.0",
     "elysia": "^1.2.0"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "prisma": "^6.0.0"
+    "@types/node": "^24.10.1",
+    "prisma": "^6.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
   }
 }
