@@ -2,16 +2,17 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "Bundler",
     "lib": ["ESNext"],
-    "types": ["bun-types"],
+    "types": ["node"],
+    "baseUrl": ".",
     "strict": true,
     "skipLibCheck": true,
     "paths": {
       "$src/*": ["./src/*"],
       "$lib/*": ["./src/lib/*"],
       "$middleware/*": ["./src/middleware/*"],
-      "$routes/*": ["./src/routes/*"],
-    },
-  },
+      "$routes/*": ["./src/routes/*"]
+    }
+  }
 }

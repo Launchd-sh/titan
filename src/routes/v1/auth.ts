@@ -1,6 +1,7 @@
 import Elysia, { t } from "elysia";
 import { db } from "$src/db";
 import { generateSessionToken, hashToken } from "$lib/tokens";
+import argon2 from "argon2";
 
 export const authRoutes = new Elysia({ prefix: "/auth" })
   .post(
@@ -12,8 +13,8 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       if (existing)
         return status(409, { error: "username or email already taken" });
 
-      const passwordHash = await Bun.password.hash(body.password, {
-        algorithm: "argon2id",
+      const passwordHash = await argon2.hash(body.password, {
+        type: argon2.argon2id,
       });
       const user = await db.user.create({
         data: { username: body.username, email: body.email, passwordHash },
@@ -41,7 +42,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       });
       if (!user) return status(401, { error: "invalid credentials" });
 
-      const valid = await Bun.password.verify(body.password, user.passwordHash);
+      const valid = await argon2.verify(user.passwordHash, body.password);
       if (!valid) return status(401, { error: "invalid credentials" });
 
       const { raw, hashed } = generateSessionToken();

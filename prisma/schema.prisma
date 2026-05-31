@@ -15,6 +15,8 @@ model User {
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   sessions     Session[]
+  memberships  OrganizationMember[]
+  auditLogs    AuditLog[]
 
   @@map("users")
 }
@@ -27,4 +29,68 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+}
+
+model Organization {
+  id          String               @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String               @unique
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz
+  members     OrganizationMember[]
+  projects    Project[]
+  auditLogs   AuditLog[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  userId         String       @unique @map("user_id") @db.Uuid
+  role           String       @default("member")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@map("organization_members")
+}
+
+model Project {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  name           String
+  slug           String
+  description    String?
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  auditLogs      AuditLog[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@map("projects")
+}
+
+model AuditLog {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  projectId      String?       @map("project_id") @db.Uuid
+  actorUserId    String        @map("actor_user_id") @db.Uuid
+  action         String
+  targetType     String        @map("target_type")
+  targetId       String        @map("target_id") @db.Uuid
+  metadata       Json?
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project        Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actorUser      User          @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([projectId, createdAt(sort: Desc)])
+  @@index([actorUserId, createdAt(sort: Desc)])
+  @@map("audit_logs")
 }
