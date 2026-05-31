@@ -47,7 +47,7 @@ model Organization {
 model OrganizationMember {
   id             String       @id @default(uuid()) @db.Uuid
   organizationId String       @map("organization_id") @db.Uuid
-  userId         String       @unique @map("user_id") @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
   role           String       @default("member")
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz
@@ -56,6 +56,7 @@ model OrganizationMember {
 
   @@unique([organizationId, userId])
   @@index([organizationId])
+  @@index([userId])
   @@map("organization_members")
 }
 

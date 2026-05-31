@@ -36,14 +36,6 @@ export const orgRoutes = new Elysia({ prefix: "/orgs" })
   .post(
     "/",
     async ({ body, session, status }) => {
-      const existingMembership = await db.organizationMember.findUnique({
-        where: { userId: session!.user.id },
-        select: { id: true },
-      });
-      if (existingMembership) {
-        return status(409, { error: "user already belongs to an organization" });
-      }
-
       const existingSlug = await db.organization.findUnique({
         where: { slug: body.slug },
         select: { id: true },

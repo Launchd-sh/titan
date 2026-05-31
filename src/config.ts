@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 function required(key: string): string {
   const val = process.env[key];
   if (!val) throw new Error(`${key} environment variable is required`);

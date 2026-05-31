@@ -11,8 +11,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@elysiajs/node": "^1.4.5",
     "@prisma/client": "^6.0.0",
     "argon2": "^0.44.0",
+    "dotenv": "^17.4.2",
     "elysia": "^1.2.0"
   },
   "devDependencies": {
